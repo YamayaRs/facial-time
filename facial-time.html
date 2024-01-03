@@ -1,0 +1,60 @@
+<html>
+	<head><meta charset="utf-8"></head>
+	<body>
+		<script type="importmap">{"imports": {
+			"three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+			"three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+		}}</script>
+		<script type="module">/* eslint-disable */
+			import * as THREE from 'three'
+			import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+			import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js'
+			import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js'
+			import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
+			let mixer
+			const clock = new THREE.Clock()
+			const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 20 )
+			camera.position.set( 0, -0.1, 2.35 ) //( 0, 0, 3.6 )
+			camera.rotateZ( 1 * Math.PI )
+			let renderer= getRenderer()				
+			let scene= getScene()			
+			setEvent()
+			function setEvent(){
+				new GLTFLoader().setKTX2Loader( 
+					new KTX2Loader().setTranscoderPath( '' ).detectSupport( renderer ) 
+				).setMeshoptDecoder( MeshoptDecoder )
+				.load( 'facecap.glb', ( gltf ) => {
+					const mesh = gltf.scene.children[ 0 ]
+					scene.add( mesh )
+					mixer = new THREE.AnimationMixer( mesh )
+					mixer.clipAction( gltf.animations[ 0 ] ).play()
+				} )
+				tick()
+			}
+			function tick(){
+				update()
+				setTimeout( tick, 1000 + 5000 * Math.random())
+				function update(){
+					if ( mixer ) mixer.update( clock.getDelta() )
+					renderer.render( scene, camera )
+				}//renderer.setAnimationLoop( update )
+			}
+			function getScene(){
+				const scene = new THREE.Scene()
+				scene.background = new THREE.Color( 0xffffff )
+				scene.environment = new THREE.PMREMGenerator( renderer ).fromScene( 
+					new RoomEnvironment( renderer ) 
+				).texture
+				return scene
+			}
+			function getRenderer(){
+				const renderer = new THREE.WebGLRenderer( { antialias: true } )
+				renderer.setPixelRatio( window.devicePixelRatio )
+				renderer.setSize( window.innerWidth, window.innerHeight )
+				renderer.toneMapping = THREE.ACESFilmicToneMapping
+				document.body.appendChild( renderer.domElement )
+				return renderer
+			}
+		</script>
+	</body>
+</html>
